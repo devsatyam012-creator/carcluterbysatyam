@@ -246,9 +246,16 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-100 to-pink-200 flex items-center justify-center p-8">
-      <div className="flex gap-8 max-w-6xl w-full">
+      <div className="max-w-md w-full">
+        {/* Button above calculator */}
+        <div className="mb-6 text-center">
+          <button className="bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-8 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-200 active:scale-95 border border-purple-500">
+            Calculator Button
+          </button>
+        </div>
+        
         {/* Calculator */}
-        <div className="bg-white rounded-3xl p-8 shadow-2xl border border-gray-100 flex-1 max-w-md backdrop-blur-sm">
+        <div className="bg-white rounded-3xl p-8 shadow-2xl border border-gray-100 backdrop-blur-sm">
           <div className="mb-8">
             <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-8 mb-6 border border-gray-200 shadow-inner">
               <div className="text-right">
@@ -313,40 +320,6 @@ function App() {
             <Button onClick={calculate} variant="equals">
               =
             </Button>
-          </div>
-        </div>
-
-        {/* History Panel */}
-        <div className="bg-white rounded-3xl p-8 shadow-2xl border border-gray-100 flex-1 max-w-sm backdrop-blur-sm">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-gray-900 text-2xl font-bold">History</h2>
-            {state.history.length > 0 && (
-              <button
-                onClick={allClear}
-                className="text-gray-600 hover:text-gray-800 transition-colors p-3 rounded-xl hover:bg-gray-100 shadow-sm"
-              >
-                <RotateCcw className="w-5 h-5" />
-              </button>
-            )}
-          </div>
-          
-          <div className="space-y-3 max-h-96 overflow-y-auto">
-            {state.history.length === 0 ? (
-              <div className="text-gray-500 text-center py-16 font-semibold text-lg">
-                No calculations yet
-              </div>
-            ) : (
-              state.history.map((calculation, index) => (
-                <div
-                  key={index}
-                  className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-5 border border-gray-200 hover:border-gray-300 transition-all duration-200 hover:shadow-md"
-                >
-                  <div className="text-gray-800 font-mono text-base font-semibold">
-                    {calculation}
-                  </div>
-                </div>
-              ))
-            )}
           </div>
         </div>
       </div>
