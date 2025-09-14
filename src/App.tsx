@@ -174,11 +174,11 @@ function App() {
       return {
         ...prevState,
         previousValue: prevState.previousValue === null ? inputValue : prevState.previousValue,
-        operation: nextOperation,
+        operation: operation,
         waitingForNewValue: true
       };
     });
-  }, [state.display]);
+  }, []);
 
   const calculate = useCallback(() => {
     performOperation(''); // Empty string means equals
@@ -207,7 +207,6 @@ function App() {
     } else if (key === 'Backspace') {
       clear();
     }
-  }, [inputNumber, inputDecimal, performOperation, calculate, allClear, clear]);
   }, [inputNumber, inputDecimal, handleOperationPress, calculate, allClear, clear]);
 
   useEffect(() => {
