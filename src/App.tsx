@@ -76,6 +76,7 @@ function App() {
   const performOperation = useCallback((nextOperation: string) => {
     const inputValue = parseFloat(state.display);
     
+    // If this is just setting the first operation, store the value and operation
     setState(prevState => {
       if (prevState.previousValue === null) {
         return {
@@ -86,6 +87,7 @@ function App() {
         };
       }
       
+      // If we have a previous operation and we're not waiting for a new value, calculate immediately
       if (prevState.operation && !prevState.waitingForNewValue) {
         const currentValue = prevState.previousValue || 0;
         let result: number;
@@ -109,16 +111,18 @@ function App() {
         
         const calculation = `${currentValue} ${prevState.operation} ${inputValue} = ${result}`;
         
+        // Show the result immediately and prepare for next operation
         return {
           ...prevState,
           display: String(result),
           previousValue: result,
           operation: nextOperation,
-          waitingForNewValue: true,
+          waitingForNewValue: nextOperation !== '', // If nextOperation is empty (equals), don't wait for new value
           history: [calculation, ...prevState.history.slice(0, 9)]
         };
       }
       
+      // If we're waiting for a new value but user pressed another operation, just change the operation
       return {
         ...prevState,
         operation: nextOperation,
@@ -127,8 +131,57 @@ function App() {
     });
   }, [state.display]);
 
+  // New function to handle intermediate calculations when operation is pressed
+  const handleOperationPress = useCallback((operation: string) => {
+    setState(prevState => {
+      // If we have a previous value and operation, and we're not waiting for new value, calculate first
+      if (prevState.previousValue !== null && prevState.operation && !prevState.waitingForNewValue) {
+        const inputValue = parseFloat(prevState.display);
+        const currentValue = prevState.previousValue;
+        let result: number;
+        
+        switch (prevState.operation) {
+          case '+':
+            result = currentValue + inputValue;
+            break;
+          case '-':
+            result = currentValue - inputValue;
+            break;
+          case '×':
+            result = currentValue * inputValue;
+            break;
+          case '÷':
+            result = inputValue !== 0 ? currentValue / inputValue : 0;
+            break;
+          default:
+            result = inputValue;
+        }
+        
+        const calculation = `${currentValue} ${prevState.operation} ${inputValue} = ${result}`;
+        
+        return {
+          ...prevState,
+          display: String(result),
+          previousValue: result,
+          operation: operation,
+          waitingForNewValue: true,
+          history: [calculation, ...prevState.history.slice(0, 9)]
+        };
+      }
+      
+      // Otherwise, just set the operation
+      const inputValue = parseFloat(prevState.display);
+      return {
+        ...prevState,
+        previousValue: prevState.previousValue === null ? inputValue : prevState.previousValue,
+        operation: nextOperation,
+        waitingForNewValue: true
+      };
+    });
+  }, [state.display]);
+
   const calculate = useCallback(() => {
-    performOperation('');
+    performOperation(''); // Empty string means equals
   }, [performOperation]);
 
   const handleKeyPress = useCallback((event: KeyboardEvent) => {
@@ -139,14 +192,14 @@ function App() {
     } else if (key === '.') {
       inputDecimal();
     } else if (key === '+') {
-      performOperation('+');
+      handleOperationPress('+');
     } else if (key === '-') {
-      performOperation('-');
+      handleOperationPress('-');
     } else if (key === '*') {
-      performOperation('×');
+      handleOperationPress('×');
     } else if (key === '/') {
       event.preventDefault();
-      performOperation('÷');
+      handleOperationPress('÷');
     } else if (key === 'Enter' || key === '=') {
       calculate();
     } else if (key === 'Escape') {
@@ -155,6 +208,7 @@ function App() {
       clear();
     }
   }, [inputNumber, inputDecimal, performOperation, calculate, allClear, clear]);
+  }, [inputNumber, inputDecimal, handleOperationPress, calculate, allClear, clear]);
 
   useEffect(() => {
     document.addEventListener('keydown', handleKeyPress);
@@ -224,7 +278,7 @@ function App() {
             <Button onClick={clear} variant="action">
               <Delete className="w-5 h-5 mx-auto" />
             </Button>
-            <Button onClick={() => performOperation('÷')} variant="operator">
+            <Button onClick={() => handleOperationPress('÷')} variant="operator">
               ÷
             </Button>
 
@@ -232,7 +286,7 @@ function App() {
             <Button onClick={() => inputNumber('7')}>7</Button>
             <Button onClick={() => inputNumber('8')}>8</Button>
             <Button onClick={() => inputNumber('9')}>9</Button>
-            <Button onClick={() => performOperation('×')} variant="operator">
+            <Button onClick={() => handleOperationPress('×')} variant="operator">
               ×
             </Button>
 
@@ -240,7 +294,7 @@ function App() {
             <Button onClick={() => inputNumber('4')}>4</Button>
             <Button onClick={() => inputNumber('5')}>5</Button>
             <Button onClick={() => inputNumber('6')}>6</Button>
-            <Button onClick={() => performOperation('-')} variant="operator">
+            <Button onClick={() => handleOperationPress('-')} variant="operator">
               -
             </Button>
 
@@ -248,7 +302,7 @@ function App() {
             <Button onClick={() => inputNumber('1')}>1</Button>
             <Button onClick={() => inputNumber('2')}>2</Button>
             <Button onClick={() => inputNumber('3')}>3</Button>
-            <Button onClick={() => performOperation('+')} variant="operator">
+            <Button onClick={() => handleOperationPress('+')} variant="operator">
               +
             </Button>
 
