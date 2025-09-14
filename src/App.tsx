@@ -531,15 +531,6 @@ function App() {
             </div>
           </div>
 
-          {/* Memory Row */}
-          <div className="grid grid-cols-5 gap-2 mb-4">
-            <Button onClick={memoryClear} variant="memory">MC</Button>
-            <Button onClick={memoryRecall} variant="memory">MR</Button>
-            <Button onClick={memoryAdd} variant="memory">M+</Button>
-            <Button onClick={memorySubtract} variant="memory">M-</Button>
-            <Button onClick={memoryStore} variant="memory">MS</Button>
-          </div>
-
           {/* Calculator Grid */}
           <div className="grid grid-cols-4 gap-2">
             {/* Row 1 */}
