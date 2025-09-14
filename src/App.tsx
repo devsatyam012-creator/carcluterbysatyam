@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Delete, RotateCcw, History, Sun, Moon, X } from 'lucide-react';
+import { Delete, RotateCcw, History, Sun, Moon, X, Menu, Calculator, Minus } from 'lucide-react';
 
 interface CalculatorState {
   display: string;
@@ -7,6 +7,7 @@ interface CalculatorState {
   operation: string | null;
   waitingForNewValue: boolean;
   history: string[];
+  memory: number;
 }
 
 function App() {
@@ -15,11 +16,13 @@ function App() {
     previousValue: null,
     operation: null,
     waitingForNewValue: false,
-    history: []
+    history: [],
+    memory: 0
   });
 
-  const [showHistory, setShowHistory] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(true);
+  const [sidebarTab, setSidebarTab] = useState<'history' | 'memory'>('history');
+  const [isDarkMode, setIsDarkMode] = useState(true);
 
   const inputNumber = useCallback((num: string) => {
     setState(prevState => {
@@ -66,14 +69,14 @@ function App() {
     }));
   }, []);
 
-  const allClear = useCallback(() => {
-    setState({
+  const clearEntry = useCallback(() => {
+    setState(prevState => ({
+      ...prevState,
       display: '0',
       previousValue: null,
       operation: null,
-      waitingForNewValue: false,
-      history: []
-    });
+      waitingForNewValue: false
+    }));
   }, []);
 
   const clearHistory = useCallback(() => {
@@ -82,6 +85,58 @@ function App() {
       history: []
     }));
   }, []);
+
+  const backspace = useCallback(() => {
+    setState(prevState => {
+      if (prevState.display.length > 1) {
+        return {
+          ...prevState,
+          display: prevState.display.slice(0, -1)
+        };
+      }
+      return {
+        ...prevState,
+        display: '0'
+      };
+    });
+  }, []);
+
+  const percentage = useCallback(() => {
+    setState(prevState => ({
+      ...prevState,
+      display: String(parseFloat(prevState.display) / 100)
+    }));
+  }, []);
+
+  const square = useCallback(() => {
+    const value = parseFloat(state.display);
+    const result = value * value;
+    setState(prevState => ({
+      ...prevState,
+      display: String(result),
+      history: [`sqr(${value}) = ${result}`, ...prevState.history.slice(0, 19)]
+    }));
+  }, [state.display]);
+
+  const squareRoot = useCallback(() => {
+    const value = parseFloat(state.display);
+    const result = Math.sqrt(value);
+    setState(prevState => ({
+      ...prevState,
+      display: String(result),
+      history: [`√(${value}) = ${result}`, ...prevState.history.slice(0, 19)]
+    }));
+  }, [state.display]);
+
+  const reciprocal = useCallback(() => {
+    const value = parseFloat(state.display);
+    const result = 1 / value;
+    setState(prevState => ({
+      ...prevState,
+      display: String(result),
+      history: [`1/(${value}) = ${result}`, ...prevState.history.slice(0, 19)]
+    }));
+  }, [state.display]);
 
   const performOperation = useCallback((nextOperation: string) => {
     const inputValue = parseFloat(state.display);
@@ -187,6 +242,42 @@ function App() {
     performOperation('');
   }, [performOperation]);
 
+  const memoryStore = useCallback(() => {
+    setState(prevState => ({
+      ...prevState,
+      memory: parseFloat(prevState.display)
+    }));
+  }, []);
+
+  const memoryRecall = useCallback(() => {
+    setState(prevState => ({
+      ...prevState,
+      display: String(prevState.memory),
+      waitingForNewValue: true
+    }));
+  }, []);
+
+  const memoryClear = useCallback(() => {
+    setState(prevState => ({
+      ...prevState,
+      memory: 0
+    }));
+  }, []);
+
+  const memoryAdd = useCallback(() => {
+    setState(prevState => ({
+      ...prevState,
+      memory: prevState.memory + parseFloat(prevState.display)
+    }));
+  }, []);
+
+  const memorySubtract = useCallback(() => {
+    setState(prevState => ({
+      ...prevState,
+      memory: prevState.memory - parseFloat(prevState.display)
+    }));
+  }, []);
+
   const handleKeyPress = useCallback((event: KeyboardEvent) => {
     const { key } = event;
     
@@ -206,11 +297,13 @@ function App() {
     } else if (key === 'Enter' || key === '=') {
       calculate();
     } else if (key === 'Escape') {
-      allClear();
+      clearEntry();
     } else if (key === 'Backspace') {
-      clear();
+      backspace();
+    } else if (key === '%') {
+      percentage();
     }
-  }, [inputNumber, inputDecimal, handleOperationPress, calculate, allClear, clear]);
+  }, [inputNumber, inputDecimal, handleOperationPress, calculate, clearEntry, backspace, percentage]);
 
   useEffect(() => {
     document.addEventListener('keydown', handleKeyPress);
@@ -221,28 +314,42 @@ function App() {
     onClick, 
     className, 
     children, 
-    variant = 'default' 
+    variant = 'default',
+    size = 'normal'
   }: {
     onClick: () => void;
     className?: string;
     children: React.ReactNode;
-    variant?: 'default' | 'operator' | 'action' | 'equals';
+    variant?: 'default' | 'operator' | 'action' | 'equals' | 'memory';
+    size?: 'normal' | 'wide';
   }) => {
-    const baseClasses = "h-16 rounded-xl font-bold text-xl transition-all duration-200 hover:shadow-lg active:scale-95 border flex items-center justify-center";
+    const baseClasses = "h-12 rounded-sm font-medium text-lg transition-all duration-150 hover:bg-opacity-80 active:scale-95 border-0 flex items-center justify-center";
     
     const variantClasses = {
       default: isDarkMode 
-        ? "bg-gray-800 hover:bg-gray-700 text-white border-gray-600 shadow-md font-bold text-2xl"
-        : "bg-white hover:bg-gray-50 text-gray-900 border-gray-200 shadow-md font-bold text-2xl",
-      operator: "bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white border-blue-500 shadow-lg font-bold text-xl",
-      action: "bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white border-red-500 shadow-lg font-bold text-lg",
-      equals: "bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white border-green-500 shadow-lg font-bold text-xl"
+        ? "bg-gray-600 hover:bg-gray-500 text-white"
+        : "bg-gray-200 hover:bg-gray-300 text-gray-900",
+      operator: isDarkMode
+        ? "bg-gray-600 hover:bg-gray-500 text-white"
+        : "bg-gray-200 hover:bg-gray-300 text-gray-900",
+      action: isDarkMode
+        ? "bg-gray-600 hover:bg-gray-500 text-white"
+        : "bg-gray-200 hover:bg-gray-300 text-gray-900",
+      equals: "bg-purple-500 hover:bg-purple-600 text-white",
+      memory: isDarkMode
+        ? "bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm"
+        : "bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm"
+    };
+
+    const sizeClasses = {
+      normal: "",
+      wide: "col-span-2"
     };
     
     return (
       <button
         onClick={onClick}
-        className={`${baseClasses} ${variantClasses[variant]} ${className || ''}`}
+        className={`${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className || ''}`}
       >
         {children}
       </button>
@@ -250,184 +357,235 @@ function App() {
   };
 
   return (
-    <div className={`min-h-screen transition-all duration-300 flex items-center justify-center p-8 ${
+    <div className={`h-screen flex transition-all duration-300 ${
       isDarkMode 
-        ? 'bg-gradient-to-br from-gray-900 to-gray-800' 
-        : 'bg-gradient-to-br from-pink-100 to-pink-200'
+        ? 'bg-gray-800 text-white' 
+        : 'bg-white text-gray-900'
     }`}>
-      <div className="max-w-md w-full relative">
-        {/* Calculator */}
-        <div className={`rounded-3xl p-8 shadow-2xl border backdrop-blur-sm transition-all duration-300 ${
+      {/* Sidebar */}
+      {showSidebar && (
+        <div className={`w-80 border-r flex flex-col transition-all duration-300 ${
           isDarkMode 
             ? 'bg-gray-900 border-gray-700' 
-            : 'bg-white border-gray-100'
+            : 'bg-gray-50 border-gray-200'
         }`}>
-          {/* Header with controls */}
-          <div className="flex justify-between items-center mb-6">
+          {/* Sidebar Header */}
+          <div className="flex border-b">
             <button
-              onClick={() => setShowHistory(!showHistory)}
-              className={`p-3 rounded-xl transition-all duration-200 hover:shadow-lg active:scale-95 ${
-                isDarkMode
-                  ? 'bg-gray-800 hover:bg-gray-700 text-white border border-gray-600'
-                  : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200'
+              onClick={() => setSidebarTab('history')}
+              className={`flex-1 px-4 py-3 text-sm font-medium transition-all duration-200 ${
+                sidebarTab === 'history'
+                  ? isDarkMode
+                    ? 'bg-gray-800 text-white border-b-2 border-purple-500'
+                    : 'bg-white text-gray-900 border-b-2 border-purple-500'
+                  : isDarkMode
+                    ? 'text-gray-400 hover:text-white hover:bg-gray-800'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
               }`}
             >
-              <History className="w-5 h-5" />
+              History
             </button>
-            
-            <h1 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-              Calculator
-            </h1>
-            
+            <button
+              onClick={() => setSidebarTab('memory')}
+              className={`flex-1 px-4 py-3 text-sm font-medium transition-all duration-200 ${
+                sidebarTab === 'memory'
+                  ? isDarkMode
+                    ? 'bg-gray-800 text-white border-b-2 border-purple-500'
+                    : 'bg-white text-gray-900 border-b-2 border-purple-500'
+                  : isDarkMode
+                    ? 'text-gray-400 hover:text-white hover:bg-gray-800'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+            >
+              Memory
+            </button>
+          </div>
+
+          {/* Sidebar Content */}
+          <div className="flex-1 overflow-y-auto p-4">
+            {sidebarTab === 'history' ? (
+              <div>
+                {state.history.length === 0 ? (
+                  <div className={`text-center py-8 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    <p className="text-lg mb-2">There's no history yet.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center mb-4">
+                      <button
+                        onClick={clearHistory}
+                        className={`p-2 rounded hover:bg-opacity-80 transition-all duration-200 ${
+                          isDarkMode
+                            ? 'hover:bg-gray-700 text-gray-400'
+                            : 'hover:bg-gray-200 text-gray-600'
+                        }`}
+                      >
+                        <RotateCcw className="w-4 h-4" />
+                      </button>
+                    </div>
+                    {state.history.map((calculation, index) => (
+                      <div
+                        key={index}
+                        className={`p-3 rounded text-right transition-all duration-200 hover:bg-opacity-80 cursor-pointer ${
+                          isDarkMode 
+                            ? 'hover:bg-gray-800' 
+                            : 'hover:bg-gray-100'
+                        }`}
+                      >
+                        <div className="text-sm font-mono break-all">
+                          {calculation}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div>
+                {state.memory === 0 ? (
+                  <div className={`text-center py-8 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    <p className="text-lg mb-2">There's nothing saved in memory.</p>
+                  </div>
+                ) : (
+                  <div className={`p-4 rounded border ${
+                    isDarkMode 
+                      ? 'bg-gray-800 border-gray-600' 
+                      : 'bg-white border-gray-200'
+                  }`}>
+                    <div className="text-right text-2xl font-mono mb-2">
+                      {state.memory}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button onClick={memoryClear} variant="memory" className="flex-1">
+                        MC
+                      </Button>
+                      <Button onClick={memoryRecall} variant="memory" className="flex-1">
+                        MR
+                      </Button>
+                      <Button onClick={memoryAdd} variant="memory" className="flex-1">
+                        M+
+                      </Button>
+                      <Button onClick={memorySubtract} variant="memory" className="flex-1">
+                        M-
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Main Calculator */}
+      <div className="flex-1 flex flex-col">
+        {/* Title Bar */}
+        <div className={`flex items-center justify-between px-4 py-2 border-b ${
+          isDarkMode 
+            ? 'bg-gray-900 border-gray-700' 
+            : 'bg-gray-50 border-gray-200'
+        }`}>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowSidebar(!showSidebar)}
+              className={`p-2 rounded hover:bg-opacity-80 transition-all duration-200 ${
+                isDarkMode
+                  ? 'hover:bg-gray-700'
+                  : 'hover:bg-gray-200'
+              }`}
+            >
+              <Menu className="w-4 h-4" />
+            </button>
+            <Calculator className="w-4 h-4" />
+            <span className="font-medium">Calculator</span>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">Standard</span>
             <button
               onClick={() => setIsDarkMode(!isDarkMode)}
-              className={`p-3 rounded-xl transition-all duration-200 hover:shadow-lg active:scale-95 ${
+              className={`p-2 rounded hover:bg-opacity-80 transition-all duration-200 ${
                 isDarkMode
-                  ? 'bg-gray-800 hover:bg-gray-700 text-white border border-gray-600'
-                  : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200'
+                  ? 'hover:bg-gray-700'
+                  : 'hover:bg-gray-200'
               }`}
             >
-              {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
-          </div>
-
-          <div className="mb-8">
-            <div className={`rounded-2xl p-8 mb-6 border shadow-inner transition-all duration-300 ${
-              isDarkMode 
-                ? 'bg-gradient-to-br from-gray-800 to-gray-700 border-gray-600' 
-                : 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200'
-            }`}>
-              <div className="text-right">
-                <div className={`text-base h-8 font-semibold ${
-                  isDarkMode ? 'text-gray-300' : 'text-gray-600'
-                }`}>
-                  {state.previousValue !== null && state.operation 
-                    ? `${state.previousValue} ${state.operation}` 
-                    : ''
-                  }
-                </div>
-                <div className={`text-5xl font-bold mt-3 truncate tracking-tight ${
-                  isDarkMode ? 'text-white' : 'text-gray-900'
-                }`}>
-                  {state.display}
-                </div>
-              </div>
-            </div>
-            
-            <div className={`text-sm text-center font-semibold ${
-              isDarkMode ? 'text-gray-400' : 'text-gray-600'
-            }`}>
-              Use keyboard for faster input
-            </div>
-          </div>
-
-          <div className="grid grid-cols-4 gap-5">
-            {/* Row 1 */}
-            <Button onClick={allClear} variant="action" className="col-span-2">
-              All Clear
-            </Button>
-            <Button onClick={clear} variant="action">
-              <Delete className="w-5 h-5 mx-auto" />
-            </Button>
-            <Button onClick={() => handleOperationPress('÷')} variant="operator">
-              ÷
-            </Button>
-
-            {/* Row 2 */}
-            <Button onClick={() => inputNumber('7')}>7</Button>
-            <Button onClick={() => inputNumber('8')}>8</Button>
-            <Button onClick={() => inputNumber('9')}>9</Button>
-            <Button onClick={() => handleOperationPress('×')} variant="operator">
-              ×
-            </Button>
-
-            {/* Row 3 */}
-            <Button onClick={() => inputNumber('4')}>4</Button>
-            <Button onClick={() => inputNumber('5')}>5</Button>
-            <Button onClick={() => inputNumber('6')}>6</Button>
-            <Button onClick={() => handleOperationPress('-')} variant="operator">
-              -
-            </Button>
-
-            {/* Row 4 */}
-            <Button onClick={() => inputNumber('1')}>1</Button>
-            <Button onClick={() => inputNumber('2')}>2</Button>
-            <Button onClick={() => inputNumber('3')}>3</Button>
-            <Button onClick={() => handleOperationPress('+')} variant="operator">
-              +
-            </Button>
-
-            {/* Row 5 */}
-            <Button onClick={() => inputNumber('0')} className="col-span-2">
-              0
-            </Button>
-            <Button onClick={inputDecimal}>.</Button>
-            <Button onClick={calculate} variant="equals">
-              =
-            </Button>
           </div>
         </div>
 
-        {/* History Panel */}
-        {showHistory && (
-          <div className={`absolute top-0 right-0 w-80 h-full rounded-3xl p-6 shadow-2xl border backdrop-blur-sm transition-all duration-300 transform translate-x-full ml-4 ${
-            isDarkMode 
-              ? 'bg-gray-900 border-gray-700' 
-              : 'bg-white border-gray-100'
-          }`}>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                History
-              </h2>
-              <div className="flex gap-2">
-                <button
-                  onClick={clearHistory}
-                  className={`p-2 rounded-lg transition-all duration-200 hover:shadow-lg active:scale-95 ${
-                    isDarkMode
-                      ? 'bg-gray-800 hover:bg-gray-700 text-white border border-gray-600'
-                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200'
-                  }`}
-                >
-                  <RotateCcw className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setShowHistory(false)}
-                  className={`p-2 rounded-lg transition-all duration-200 hover:shadow-lg active:scale-95 ${
-                    isDarkMode
-                      ? 'bg-gray-800 hover:bg-gray-700 text-white border border-gray-600'
-                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200'
-                  }`}
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
+        {/* Display */}
+        <div className="flex-1 flex flex-col justify-end p-6">
+          <div className="text-right mb-8">
+            <div className={`text-sm mb-2 h-6 ${
+              isDarkMode ? 'text-gray-400' : 'text-gray-600'
+            }`}>
+              {state.previousValue !== null && state.operation 
+                ? `${state.previousValue} ${state.operation}` 
+                : ''
+              }
             </div>
-            
-            <div className="space-y-3 max-h-96 overflow-y-auto">
-              {state.history.length === 0 ? (
-                <div className={`text-center py-8 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  <History className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                  <p>No calculations yet</p>
-                </div>
-              ) : (
-                state.history.map((calculation, index) => (
-                  <div
-                    key={index}
-                    className={`p-3 rounded-lg border transition-all duration-200 hover:shadow-md ${
-                      isDarkMode 
-                        ? 'bg-gray-800 border-gray-600 text-white hover:bg-gray-700' 
-                        : 'bg-gray-50 border-gray-200 text-gray-900 hover:bg-gray-100'
-                    }`}
-                  >
-                    <div className="text-sm font-mono break-all">
-                      {calculation}
-                    </div>
-                  </div>
-                ))
-              )}
+            <div className="text-6xl font-light tracking-tight">
+              {state.display}
             </div>
           </div>
-        )}
+
+          {/* Memory Row */}
+          <div className="grid grid-cols-5 gap-2 mb-4">
+            <Button onClick={memoryClear} variant="memory">MC</Button>
+            <Button onClick={memoryRecall} variant="memory">MR</Button>
+            <Button onClick={memoryAdd} variant="memory">M+</Button>
+            <Button onClick={memorySubtract} variant="memory">M-</Button>
+            <Button onClick={memoryStore} variant="memory">MS</Button>
+          </div>
+
+          {/* Calculator Grid */}
+          <div className="grid grid-cols-4 gap-2">
+            {/* Row 1 */}
+            <Button onClick={percentage} variant="action">%</Button>
+            <Button onClick={clearEntry} variant="action">CE</Button>
+            <Button onClick={clear} variant="action">C</Button>
+            <Button onClick={backspace} variant="action">
+              <Delete className="w-5 h-5" />
+            </Button>
+
+            {/* Row 2 */}
+            <Button onClick={reciprocal} variant="action">¹⁄ₓ</Button>
+            <Button onClick={square} variant="action">x²</Button>
+            <Button onClick={squareRoot} variant="action">²√x</Button>
+            <Button onClick={() => handleOperationPress('÷')} variant="operator">÷</Button>
+
+            {/* Row 3 */}
+            <Button onClick={() => inputNumber('7')}>7</Button>
+            <Button onClick={() => inputNumber('8')}>8</Button>
+            <Button onClick={() => inputNumber('9')}>9</Button>
+            <Button onClick={() => handleOperationPress('×')} variant="operator">×</Button>
+
+            {/* Row 4 */}
+            <Button onClick={() => inputNumber('4')}>4</Button>
+            <Button onClick={() => inputNumber('5')}>5</Button>
+            <Button onClick={() => inputNumber('6')}>6</Button>
+            <Button onClick={() => handleOperationPress('-')} variant="operator">-</Button>
+
+            {/* Row 5 */}
+            <Button onClick={() => inputNumber('1')}>1</Button>
+            <Button onClick={() => inputNumber('2')}>2</Button>
+            <Button onClick={() => inputNumber('3')}>3</Button>
+            <Button onClick={() => handleOperationPress('+')} variant="operator">+</Button>
+
+            {/* Row 6 */}
+            <Button onClick={() => inputNumber('0')} size="wide">0</Button>
+            <Button onClick={inputDecimal}>.</Button>
+            <Button onClick={calculate} variant="equals">=</Button>
+          </div>
+
+          <div className={`text-center text-sm mt-4 ${
+            isDarkMode ? 'text-gray-400' : 'text-gray-600'
+          }`}>
+            Use keyboard for faster input
+          </div>
+        </div>
       </div>
     </div>
   );
